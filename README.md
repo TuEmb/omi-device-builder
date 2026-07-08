@@ -28,23 +28,29 @@ live streaming.
 **Goal: support every XIAO Sense board that has an onboard microphone.** The C3
 and RP2040 XIAOs have no mic and are out of scope.
 
+Build status verified against the pinned Zephyr **v4.2.0**:
+
 | Device (`omi-<device>`) | Zephyr board target | SoC | Status |
 |---|---|---|---|
-| `xiao52`      | `xiao_ble/nrf52840/sense`         | nRF52840 | ✅ primary (mic + RGB LED + battery) |
-| `xiao54l`     | `xiao_nrf54l15/nrf54l15/cpuapp`   | nRF54L15 | ⚠️ verify board is in the pinned Zephyr tag + overlay pins |
-| `xiaoesp32s3` | `xiao_esp32s3/esp32s3/procpu`     | ESP32-S3 | 🧪 experimental; see board conf TODOs (blobs, PDM driver) |
-| `xiaomg24`    | `xiao_mg24/efr32mg24b220f1536im48` | EFR32MG24 | 🧪 verify board qualifier + Silabs BLE/PDM in pinned tag |
+| `xiao52`      | `xiao_ble/nrf52840/sense`         | nRF52840 | ✅ **builds** (mic + RGB LED + battery) — verified |
+| `xiao54l`     | `xiao_nrf54l15/nrf54l15/cpuapp`   | nRF54L15 | ❌ board not in v4.2.0 — needs newer Zephyr (bump `west.yml`) |
+| `xiaomg24`    | `xiao_mg24/efr32mg24b220f1536im48` | EFR32MG24 | ⛔ board has **no mic node** in Zephyr — needs PDM DT bring-up |
+| `xiaoesp32s3` | `xiao_esp32s3/esp32s3/procpu`     | ESP32-S3 | ⛔ board has **no mic node** in Zephyr + needs Espressif blobs |
 
-Notes:
-- **Nordic boards** (`xiao52`, `xiao54l`) are the fully-supported path — same
-  BLE controller family as the omi firmware.
-- **ESP32-S3** and **MG24** use different BLE controllers/toolchains; the common
-  `prj.conf` is SoC-agnostic and controller-specific config lives in the Nordic
-  board confs, so these boards can be added without breaking the Nordic builds.
-  ESP32-S3 needs Espressif blobs and a working PDM/DMIC path (see its `.conf`).
-- **MG24** (`xiao_mg24`) and **nRF54L15** (`xiao_nrf54l15`) are recent additions;
-  confirm they exist in the pinned Zephyr tag (`west boards | grep -iE 'xiao|mg24'`)
-  and bump `west.yml` if not.
+**The catch:** only `xiao_ble` wires up a microphone in upstream Zephyr. The
+`xiao_mg24` and `xiao_esp32s3` board DTS define **no PDM/I2S mic node** (and only
+a single `led0`), so `omi-xiaomg24`/`omi-xiaoesp32s3` fail at devicetree
+(`undefined node label 'pdm0'`) until someone adds the mic peripheral node with
+the real schematic pins. That's genuine per-board hardware bring-up, not just an
+alias — it needs the board schematic and on-device testing.
+
+To finish each remaining board:
+- **xiao54l** — bump `west.yml` `revision:` to a Zephyr tag/commit that includes
+  `xiao_nrf54l15`, then verify the mic node + overlay pins.
+- **xiaomg24** — in `boards/xiaomg24.overlay`, define the EFR32 PDM node with the
+  XIAO MG24 Sense mic pins + `dmic-dev` alias; add Silabs BLE blobs if required.
+- **xiaoesp32s3** — `west blobs fetch hal_espressif`, then define the I2S-PDM RX
+  node with the S3 Sense mic pins + `dmic-dev` alias.
 
 Add another board by dropping `boards/<device>.conf` + `boards/<device>.overlay`
 and one line in `scripts/build_all.*`.
