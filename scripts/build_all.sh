@@ -9,6 +9,7 @@ set -euo pipefail
 declare -A BOARDS=(
     [xiao52]="xiao_ble/nrf52840/sense"
     [xiao54l]="xiao_nrf54l15/nrf54l15/cpuapp"
+    [xiaoesp32s3]="xiao_esp32s3/esp32s3/procpu"
 )
 
 only="${1:-}"

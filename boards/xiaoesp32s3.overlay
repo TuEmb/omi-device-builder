@@ -1,0 +1,29 @@
+/*
+ * Seeed XIAO ESP32S3 Sense overlay.
+ *
+ * TODO(verify): ESP32-S3 differs substantially from the nRF parts. This overlay
+ * is a scaffold — fill in the real nodes for your Zephyr version:
+ *   - `dmic-dev` alias must point at the ESP32-S3 PDM capture device. The S3
+ *     Sense mic is PDM on the expansion board; if Zephyr exposes it via I2S-PDM,
+ *     enable that node and alias it here.
+ *   - battery sense ADC channel (XIAO ESP32S3 has no on-board battery divider by
+ *     default; the Sense expansion / your wiring determines this).
+ *
+ * The RGB status LED is disabled for this board (single user LED) in the .conf.
+ */
+
+/ {
+	aliases {
+		/* TODO: point at the real PDM/I2S-RX node once enabled. */
+		dmic-dev = &i2s0;
+	};
+
+	zephyr,user {
+		/* TODO: set the real battery-sense ADC channel. */
+		io-channels = <&adc0 0>;
+	};
+};
+
+/* TODO: enable and configure the PDM RX path, e.g.:
+ * &i2s0 { status = "okay"; ... pinctrl for PDM CLK/DIN ... };
+ */

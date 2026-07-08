@@ -7,8 +7,9 @@ $ErrorActionPreference = "Stop"
 
 # device name -> Zephyr board target
 $devices = @(
-    @{ name = "xiao52";  board = "xiao_ble/nrf52840/sense" }
-    @{ name = "xiao54l"; board = "xiao_nrf54l15/nrf54l15/cpuapp" }
+    @{ name = "xiao52";       board = "xiao_ble/nrf52840/sense" }
+    @{ name = "xiao54l";      board = "xiao_nrf54l15/nrf54l15/cpuapp" }
+    @{ name = "xiaoesp32s3";  board = "xiao_esp32s3/esp32s3/procpu" }
 )
 
 $only = $args[0]
