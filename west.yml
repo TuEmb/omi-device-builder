@@ -1,0 +1,27 @@
+# west manifest for omi-device-builder.
+#
+# T2 ("application") topology: THIS repo is the manifest repo, and it imports
+# Zephyr (which in turn pulls every vendor HAL module — hal_nordic, hal_espressif,
+# hal_silabs — needed for the XIAO nRF / ESP32-S3 / MG24 targets).
+#
+# Setup (see README "Setup" section):
+#   west init -l omi-device-builder
+#   west update
+#
+manifest:
+  version: "1.0"
+
+  remotes:
+    - name: zephyrproject-rtos
+      url-base: https://github.com/zephyrproject-rtos
+
+  projects:
+    - name: zephyr
+      remote: zephyrproject-rtos
+      # "main" = latest (gives xiao_nrf54l15 + xiao_mg24). Pin to a release tag
+      # (e.g. v4.2.0) for reproducible builds once you settle on a version.
+      revision: main
+      import: true
+
+  self:
+    path: omi-device-builder
