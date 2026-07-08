@@ -25,10 +25,25 @@ live streaming.
 
 ## Supported boards
 
-| Device (`omi-<device>`) | Zephyr board target | Notes |
-|---|---|---|
-| `xiao52`  | `xiao_ble/nrf52840/sense` | Seeed XIAO nRF52840 Sense (has onboard PDM mic) |
-| `xiao54l` | `xiao_nrf54l15/nrf54l15/cpuapp` | Seeed XIAO nRF54L15 — **verify board name + overlay pins** |
+**Goal: support every XIAO Sense board that has an onboard microphone.** The C3
+and RP2040 XIAOs have no mic and are out of scope.
+
+| Device (`omi-<device>`) | Zephyr board target | SoC | Status |
+|---|---|---|---|
+| `xiao52`      | `xiao_ble/nrf52840/sense`         | nRF52840 | ✅ primary (mic + RGB LED + battery) |
+| `xiao54l`     | `xiao_nrf54l15/nrf54l15/cpuapp`   | nRF54L15 | ⚠️ needs latest NCS; verify overlay pins |
+| `xiaoesp32s3` | `xiao_esp32s3/esp32s3/procpu`     | ESP32-S3 | 🧪 experimental; see board conf TODOs (blobs, PDM driver) |
+| `xiaomg24`    | `xiao_mg24/...` (Silicon Labs)    | EFR32MG24 | ⏳ pending: no upstream Zephyr board yet |
+
+Notes:
+- **Nordic boards** (`xiao52`, `xiao54l`) are the fully-supported path — same
+  BLE controller family as the omi firmware.
+- **ESP32-S3** and **MG24** use different BLE controllers/toolchains; the common
+  `prj.conf` is SoC-agnostic and controller-specific config lives in the Nordic
+  board confs, so these boards can be added without breaking the Nordic builds.
+  ESP32-S3 needs Espressif blobs and a working PDM/DMIC path (see its `.conf`).
+- **MG24** has no upstream Zephyr board in current NCS; add `boards/xiaomg24.*`
+  once a `xiao_mg24` board target is available.
 
 Add another board by dropping `boards/<device>.conf` + `boards/<device>.overlay`
 and one line in `scripts/build_all.*`.
