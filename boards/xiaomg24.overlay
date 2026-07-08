@@ -1,0 +1,26 @@
+/*
+ * Seeed XIAO MG24 Sense overlay (Silicon Labs EFR32MG24).
+ *
+ * TODO(verify): fill in the real nodes from your Zephyr's xiao_mg24 DTS:
+ *   - `dmic-dev` alias -> the EFR32 PDM peripheral node (with mic CLK/DIN pins).
+ *     The MG24 Sense mic is a PDM MEMS mic; enable the PDM node and alias it.
+ *   - battery-sense ADC channel (IADC) for your wiring.
+ *
+ * The RGB status LED is disabled for this board in the .conf (single user LED).
+ */
+
+/ {
+	aliases {
+		/* TODO: point at the real EFR32 PDM node (e.g. &pdm0). */
+		dmic-dev = &pdm0;
+	};
+
+	zephyr,user {
+		/* TODO: set the real battery-sense ADC (IADC) channel. */
+		io-channels = <&adc0 0>;
+	};
+};
+
+/* TODO: enable + configure the PDM node with the mic pins, e.g.:
+ * &pdm0 { status = "okay"; ... pinctrl ... };
+ */

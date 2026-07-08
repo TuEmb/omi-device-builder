@@ -33,7 +33,7 @@ and RP2040 XIAOs have no mic and are out of scope.
 | `xiao52`      | `xiao_ble/nrf52840/sense`         | nRF52840 | ✅ primary (mic + RGB LED + battery) |
 | `xiao54l`     | `xiao_nrf54l15/nrf54l15/cpuapp`   | nRF54L15 | ⚠️ needs latest NCS; verify overlay pins |
 | `xiaoesp32s3` | `xiao_esp32s3/esp32s3/procpu`     | ESP32-S3 | 🧪 experimental; see board conf TODOs (blobs, PDM driver) |
-| `xiaomg24`    | `xiao_mg24/...` (Silicon Labs)    | EFR32MG24 | ⏳ pending: no upstream Zephyr board yet |
+| `xiaomg24`    | `xiao_mg24/efr32mg24b220f1536im48` | EFR32MG24 | 🧪 on Zephyr latest; verify board qualifier + Silabs BLE/PDM |
 
 Notes:
 - **Nordic boards** (`xiao52`, `xiao54l`) are the fully-supported path — same
@@ -42,8 +42,9 @@ Notes:
   `prj.conf` is SoC-agnostic and controller-specific config lives in the Nordic
   board confs, so these boards can be added without breaking the Nordic builds.
   ESP32-S3 needs Espressif blobs and a working PDM/DMIC path (see its `.conf`).
-- **MG24** has no upstream Zephyr board in current NCS; add `boards/xiaomg24.*`
-  once a `xiao_mg24` board target is available.
+- **MG24** (`xiao_mg24`) is available on Zephyr latest; build against latest
+  Zephyr/NCS (which also provides `xiao_nrf54l15`). Verify the exact board
+  qualifier with `west boards | grep mg24`.
 
 Add another board by dropping `boards/<device>.conf` + `boards/<device>.overlay`
 and one line in `scripts/build_all.*`.
