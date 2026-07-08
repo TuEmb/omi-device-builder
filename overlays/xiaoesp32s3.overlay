@@ -1,0 +1,15 @@
+/* User button for XIAO ESP32S3 Sense. Edit the pin to your wiring.
+ * ESP32-S3 GPIOs are on &gpio0. */
+/ {
+	buttons {
+		compatible = "gpio-keys";
+		user_button: user_button {
+			gpios = <&gpio0 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; /* TODO: your pin */
+			label = "User button";
+		};
+	};
+
+	aliases {
+		sw0 = &user_button;
+	};
+};

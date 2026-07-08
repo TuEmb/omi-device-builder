@@ -51,13 +51,35 @@ and one line in `scripts/build_all.*`.
 
 ## Requirements
 
-- **nRF Connect SDK (latest)** — the Seeed XIAO nRF54L15 board is only present in
-  recent NCS/Zephyr. `xiao_ble` has shipped for a long time.
-- Verify board names in your SDK: `west boards | grep -i xiao`.
+- **west** + a Python venv, and the **Zephyr SDK** toolchain (covers arm for
+  nRF/MG24 and xtensa/riscv for ESP32-S3). NCS's bundled toolchain also works
+  for the Nordic boards.
+- This repo is a **west manifest repo** (`west.yml`) that pulls **Zephyr latest**
+  and all vendor HALs — `main` gives `xiao_nrf54l15` and `xiao_mg24`.
+
+## Setup (one-time)
+
+Create a workspace with this repo as the manifest, then pull Zephyr + modules:
+
+```sh
+# put this repo at <workspace>/omi-device-builder, then from <workspace>:
+python -m venv .venv && . .venv/bin/activate   # (Windows: .venv\Scripts\activate)
+pip install west
+
+west init -l omi-device-builder
+west update                       # clones Zephyr + all HAL modules (takes a while)
+west zephyr-export
+pip install -r zephyr/scripts/requirements.txt
+
+# ESP32-S3 only: fetch Espressif binary blobs
+west blobs fetch hal_espressif
+```
+
+Confirm board names are present: `west boards | grep -iE 'xiao|mg24'`.
 
 ## Build
 
-From the project root, inside your NCS environment:
+From `omi-device-builder/`, with the venv active:
 
 ```sh
 # all boards
@@ -66,15 +88,23 @@ From the project root, inside your NCS environment:
 ./scripts/build_all.sh xiao52
 ```
 
-Or a single board manually:
+Or a single board manually (board overlay + optional user overlay):
 
 ```sh
 west build -b xiao_ble/nrf52840/sense -d build/omi-xiao52 -p always -- \
   -DEXTRA_CONF_FILE=boards/xiao52.conf \
-  -DEXTRA_DTC_OVERLAY_FILE=boards/xiao52.overlay
+  -DEXTRA_DTC_OVERLAY_FILE="boards/xiao52.overlay;overlays/xiao52.overlay"
 ```
 
 Artifacts are copied to `build/omi-<device>.hex`.
+
+## User button pins — `overlays/`
+
+Most XIAO boards have no on-board user button, so the button GPIO is declared
+per wiring in `overlays/<device>.overlay` (defines a `gpio-keys` node + the `sw0`
+alias). The build scripts apply it automatically on top of the board overlay.
+Edit the `gpios = <...>` line to your pin; if the file is absent, the button
+just compiles out. See [overlays/README.md](overlays/README.md).
 
 ## ⚠️ Before you flash — verify the board overlays
 
