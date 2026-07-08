@@ -1,87 +1,46 @@
 /*
  * Seeed XIAO nRF52840 Sense overlay.
  *
- * Pin references (from the Seeed variant): PDM DATA = P0.16, PDM CLK = P1.00,
- * on-board mic power (LDO enable) = P1.10; RGB LED red = P0.26, green = P0.30,
- * blue = P0.06 (all active-low); user button = none by default; battery sense
- * on P0.31 (AIN7) with a 1M/510k divider, read-enable on P0.14 (active low).
- *
- * TODO(verify): confirm these against your NCS version's xiao_ble DTS. Some
- * NCS releases already define the Sense mic node — if so, drop the pdm block.
+ * The board DTS already defines the mic (&pdm0 + MSM261 power regulator on
+ * P1.10), the RGB gpio-LEDs (led0/led1/led2), and the ADC. We only:
+ *   1. expose the mic as the `dmic-dev` alias and enable it,
+ *   2. keep the mic power regulator on at boot,
+ *   3. add a battery-sense ADC channel (AIN7 = P0.31, divider read-enable P0.14).
  */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/nrf-saadc.h>
 
 / {
 	aliases {
 		dmic-dev = &pdm0;
 	};
 
-	pwmleds {
-		compatible = "pwm-leds";
-		led_red: led_pwm_red {
-			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
-		};
-		led_green: led_pwm_green {
-			pwms = <&pwm1 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
-		};
-		led_blue: led_pwm_blue {
-			pwms = <&pwm2 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
-		};
+	/* Power the on-board MSM261 PDM mic at boot (regulator on P1.10). */
+	msm261d3526hicpm-c-en {
+		regulator-boot-on;
 	};
 
 	zephyr,user {
-		io-channels = <&adc 7>; /* AIN7 = P0.31 battery sense */
+		io-channels = <&adc 7>;
 		batt-enable-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
-	};
-};
-
-&pinctrl {
-	pdm0_default: pdm0_default {
-		group1 {
-			psels = <NRF_PSEL(PDM_CLK, 1, 0)>,
-				<NRF_PSEL(PDM_DIN, 0, 16)>;
-		};
-	};
-
-	pwm0_default: pwm0_default {
-		group1 {
-			psels = <NRF_PSEL(PWM_OUT0, 0, 26)>; /* red */
-		};
-	};
-	pwm1_default: pwm1_default {
-		group1 {
-			psels = <NRF_PSEL(PWM_OUT0, 0, 30)>; /* green */
-		};
-	};
-	pwm2_default: pwm2_default {
-		group1 {
-			psels = <NRF_PSEL(PWM_OUT0, 0, 6)>; /* blue */
-		};
 	};
 };
 
 &pdm0 {
 	status = "okay";
-	pinctrl-0 = <&pdm0_default>;
-	pinctrl-names = "default";
-	clock-source = "PCLK32M_HFXO";
-};
-
-&pwm0 {
-	status = "okay";
-	pinctrl-0 = <&pwm0_default>;
-	pinctrl-names = "default";
-};
-&pwm1 {
-	status = "okay";
-	pinctrl-0 = <&pwm1_default>;
-	pinctrl-names = "default";
-};
-&pwm2 {
-	status = "okay";
-	pinctrl-0 = <&pwm2_default>;
-	pinctrl-names = "default";
 };
 
 &adc {
-	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@7 {
+		reg = <7>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)>;
+		zephyr,input-positive = <NRF_SAADC_AIN7>; /* P0.31 */
+		zephyr,resolution = <12>;
+	};
 };
