@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Build omi-device-builder for every supported XIAO board.
+# Run from the project root inside your nRF Connect SDK (latest) environment:
+#   ./scripts/build_all.sh            # build all
+#   ./scripts/build_all.sh xiao52     # build one
+set -euo pipefail
+
+# device name : Zephyr board target
+declare -A BOARDS=(
+    [xiao52]="xiao_ble/nrf52840/sense"
+    [xiao54l]="xiao_nrf54l15/nrf54l15/cpuapp"
+)
+
+only="${1:-}"
+
+for name in "${!BOARDS[@]}"; do
+    if [ -n "$only" ] && [ "$name" != "$only" ]; then
+        continue
+    fi
+    board="${BOARDS[$name]}"
+    outdir="build/omi-$name"
+    echo "==> Building omi-$name (board $board)"
+    west build -b "$board" -d "$outdir" -p always -- \
+        "-DEXTRA_CONF_FILE=boards/$name.conf" \
+        "-DEXTRA_DTC_OVERLAY_FILE=boards/$name.overlay"
+    cp "$outdir/zephyr/zephyr.hex" "build/omi-$name.hex"
+    echo "    -> build/omi-$name.hex"
+done
+
+echo "All builds done."

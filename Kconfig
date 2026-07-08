@@ -1,0 +1,29 @@
+source "Kconfig.zephyr"
+
+menu "Omi Device Builder Configuration"
+
+config OMI_CODEC_OPUS
+    bool "Opus audio codec"
+    default y
+    help
+      Enable the Opus audio codec (wire-compatible with the Omi app).
+
+config OMI_ENABLE_BATTERY
+    bool "Battery monitoring"
+    default y
+    help
+      Enable battery voltage ADC + BLE Battery Service.
+
+config OMI_ENABLE_BUTTON
+    bool "User button"
+    default y
+    help
+      Enable user-button handling (long-press power off).
+
+config OMI_ENABLE_LED
+    bool "Status LED"
+    default y
+    help
+      Enable the RGB status LED (PWM, connection/advertising indication).
+
+endmenu
