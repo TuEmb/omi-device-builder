@@ -31,9 +31,9 @@ and RP2040 XIAOs have no mic and are out of scope.
 | Device (`omi-<device>`) | Zephyr board target | SoC | Status |
 |---|---|---|---|
 | `xiao52`      | `xiao_ble/nrf52840/sense`         | nRF52840 | ✅ primary (mic + RGB LED + battery) |
-| `xiao54l`     | `xiao_nrf54l15/nrf54l15/cpuapp`   | nRF54L15 | ⚠️ needs latest NCS; verify overlay pins |
+| `xiao54l`     | `xiao_nrf54l15/nrf54l15/cpuapp`   | nRF54L15 | ⚠️ verify board is in the pinned Zephyr tag + overlay pins |
 | `xiaoesp32s3` | `xiao_esp32s3/esp32s3/procpu`     | ESP32-S3 | 🧪 experimental; see board conf TODOs (blobs, PDM driver) |
-| `xiaomg24`    | `xiao_mg24/efr32mg24b220f1536im48` | EFR32MG24 | 🧪 on Zephyr latest; verify board qualifier + Silabs BLE/PDM |
+| `xiaomg24`    | `xiao_mg24/efr32mg24b220f1536im48` | EFR32MG24 | 🧪 verify board qualifier + Silabs BLE/PDM in pinned tag |
 
 Notes:
 - **Nordic boards** (`xiao52`, `xiao54l`) are the fully-supported path — same
@@ -42,9 +42,9 @@ Notes:
   `prj.conf` is SoC-agnostic and controller-specific config lives in the Nordic
   board confs, so these boards can be added without breaking the Nordic builds.
   ESP32-S3 needs Espressif blobs and a working PDM/DMIC path (see its `.conf`).
-- **MG24** (`xiao_mg24`) is available on Zephyr latest; build against latest
-  Zephyr/NCS (which also provides `xiao_nrf54l15`). Verify the exact board
-  qualifier with `west boards | grep mg24`.
+- **MG24** (`xiao_mg24`) and **nRF54L15** (`xiao_nrf54l15`) are recent additions;
+  confirm they exist in the pinned Zephyr tag (`west boards | grep -iE 'xiao|mg24'`)
+  and bump `west.yml` if not.
 
 Add another board by dropping `boards/<device>.conf` + `boards/<device>.overlay`
 and one line in `scripts/build_all.*`.
@@ -54,8 +54,9 @@ and one line in `scripts/build_all.*`.
 - **west** + a Python venv, and the **Zephyr SDK** toolchain (covers arm for
   nRF/MG24 and xtensa/riscv for ESP32-S3). NCS's bundled toolchain also works
   for the Nordic boards.
-- This repo is a **west manifest repo** (`west.yml`) that pulls **Zephyr latest**
-  and all vendor HALs — `main` gives `xiao_nrf54l15` and `xiao_mg24`.
+- This repo is a **west manifest repo** (`west.yml`) that pulls a **pinned Zephyr
+  release** (currently `v4.2.0`) and all vendor HALs. Change the `revision:` in
+  `west.yml` to move versions.
 
 ## Setup (one-time)
 

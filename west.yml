@@ -18,9 +18,10 @@ manifest:
   projects:
     - name: zephyr
       remote: zephyrproject-rtos
-      # "main" = latest (gives xiao_nrf54l15 + xiao_mg24). Pin to a release tag
-      # (e.g. v4.2.0) for reproducible builds once you settle on a version.
-      revision: main
+      # Pinned to a fixed release for reproducible builds. Verify this tag ships
+      # the newest boards you target: `west boards | grep -iE 'xiao|mg24'`.
+      # If xiao_nrf54l15 / xiao_mg24 are missing, bump to a newer tag (or a SHA).
+      revision: v4.2.0
       import: true
 
   self:
