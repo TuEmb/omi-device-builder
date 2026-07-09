@@ -34,22 +34,24 @@ Build status verified against the pinned Zephyr **v4.4.1** (Zephyr SDK 1.0.1):
 |---|---|---|---|
 | `xiao52`      | `xiao_ble/nrf52840/sense`         | nRF52840 | ✅ **builds** — FLASH 34% / RAM 64% (mic + RGB LED + battery) |
 | `xiao54l`     | `xiao_nrf54l15/nrf54l15/cpuapp`   | nRF54L15 | ✅ **builds** — FLASH 17% / RAM 61% (mic; single LED) |
-| `xiaomg24`    | `xiao_mg24/efr32mg24b220f1536im48` | EFR32MG24 | ⛔ board has **no mic node** in Zephyr — needs PDM DT bring-up |
-| `xiaoesp32s3` | `xiao_esp32s3/esp32s3/procpu`     | ESP32-S3 | ⛔ board has **no mic node** in Zephyr + needs Espressif blobs |
+| `xiaomg24`    | `xiao_mg24/efr32mg24b220f1536im48` | EFR32MG24 | ⛔ **analog** mic → needs an ADC-sampling backend (not DMIC) |
+| `xiaoesp32s3` | `xiao_esp32s3/esp32s3/procpu`     | ESP32-S3 | ⛔ PDM mic, but Zephyr has **no ESP32 PDM/DMIC driver** |
 
-**The catch for the last two:** only `xiao_ble` and `xiao_nrf54l15` wire up a
-microphone in upstream Zephyr v4.4.1. The `xiao_mg24` and `xiao_esp32s3` board
-DTS define **no PDM/I2S mic node** (and only a single `led0`), so
-`omi-xiaomg24`/`omi-xiaoesp32s3` fail at devicetree (`undefined node label
-'pdm0'`) until someone adds the mic peripheral node with the real schematic pins.
-That's genuine per-board hardware bring-up, not just an alias — it needs the
-board schematic and on-device testing.
+**The catch for the last two is a missing *driver*, not a missing overlay.** An
+overlay can only bind pins to a driver that already exists. Reading the Seeed
+schematics:
 
-To finish the remaining two boards:
-- **xiaomg24** — in `boards/xiaomg24.overlay`, define the EFR32 PDM node with the
-  XIAO MG24 Sense mic pins + `dmic-dev` alias; add Silabs BLE blobs if required.
-- **xiaoesp32s3** — `west blobs fetch hal_espressif`, then define the I2S-PDM RX
-  node with the S3 Sense mic pins + `dmic-dev` alias.
+- **xiaoesp32s3** — onboard PDM mic MSM261D3526H1CPM, **CLK=GPIO42, DIN=GPIO41**.
+  But Zephyr v4.4.1's ESP32 I2S driver has no PDM-RX mode and there's no `dmic`
+  backend for ESP32. Needs a Zephyr PDM driver first (extend `i2s_esp32` for
+  PDM-RX + mpxxdtyy, or wrap ESP-IDF I2S-PDM). See `boards/xiaoesp32s3.overlay`.
+- **xiaomg24** — onboard mic is the **MSM381ACT001, an ANALOG MEMS mic**
+  (DATA=PC9, PWR=PC8), not PDM. It can't use the DMIC path at all; it needs a
+  16 kHz ADC-sampling mic backend feeding `codec_receive_pcm()`. See
+  `boards/xiaomg24.overlay`.
+
+Both are real firmware development (a driver / an ADC backend) plus on-device
+testing — captured in the overlay files with the exact pins for whoever does it.
 
 Add another board by dropping `boards/<device>.conf` + `boards/<device>.overlay`
 and one line in `scripts/build_all.*`.

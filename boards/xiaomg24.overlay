@@ -1,26 +1,18 @@
 /*
- * Seeed XIAO MG24 Sense overlay (Silicon Labs EFR32MG24).
+ * Seeed XIAO MG24 Sense — onboard mic is the MSM381ACT001, an ANALOG MEMS mic
+ * (NOT a PDM/digital mic). Schematic pins (Seeed wiki / makerguides):
+ *     MIC_DATA (analog output) -> PC9   (sample via EFR32 IADC/ADC)
+ *     MIC_PWR  (enable)        -> PC8
  *
- * TODO(verify): fill in the real nodes from your Zephyr's xiao_mg24 DTS:
- *   - `dmic-dev` alias -> the EFR32 PDM peripheral node (with mic CLK/DIN pins).
- *     The MG24 Sense mic is a PDM MEMS mic; enable the PDM node and alias it.
- *   - battery-sense ADC channel (IADC) for your wiring.
+ * BLOCKER (why there is no dmic-dev node here):
+ *   The mic is analog, so it is not a DMIC/PDM device — the Zephyr DMIC API used
+ *   by src/mic.c does not apply at all. Capturing it requires a 16 kHz
+ *   ADC-sampling backend (timer-triggered IADC into a PCM buffer), plus the
+ *   Silabs ADC driver. That is an application-code path to add, not an overlay.
  *
- * The RGB status LED is disabled for this board in the .conf (single user LED).
- */
-
-/ {
-	aliases {
-		/* TODO: point at the real EFR32 PDM node (e.g. &pdm0). */
-		dmic-dev = &pdm0;
-	};
-
-	zephyr,user {
-		/* TODO: set the real battery-sense ADC (IADC) channel. */
-		io-channels = <&adc0 0>;
-	};
-};
-
-/* TODO: enable + configure the PDM node with the mic pins, e.g.:
- * &pdm0 { status = "okay"; ... pinctrl ... };
+ * To support the mic:
+ *   1. add a mic backend that samples PC9 via the ADC at 16 kHz (mono, 16-bit),
+ *      feeding codec_receive_pcm() the same way src/mic.c does,
+ *   2. drive MIC_PWR (PC8) high to power the mic,
+ *   3. select that ADC backend for this board instead of the DMIC src/mic.c.
  */
