@@ -30,28 +30,35 @@ and RP2040 XIAOs have no mic and are out of scope.
 
 Build status verified against the pinned Zephyr **v4.4.1** (Zephyr SDK 1.0.1):
 
-| Device (`omi-<device>`) | Zephyr board target | SoC | Status |
-|---|---|---|---|
-| `xiao52`      | `xiao_ble/nrf52840/sense`         | nRF52840 | ✅ **builds** — FLASH 34% / RAM 64% (mic + RGB LED + battery) |
-| `xiao54l`     | `xiao_nrf54l15/nrf54l15/cpuapp`   | nRF54L15 | ✅ **builds** — FLASH 17% / RAM 61% (mic; single LED) |
-| `xiaomg24`    | `xiao_mg24/efr32mg24b220f1536im48` | EFR32MG24 | ⛔ **analog** mic → needs an ADC-sampling backend (not DMIC) |
-| `xiaoesp32s3` | `xiao_esp32s3/esp32s3/procpu`     | ESP32-S3 | ⛔ PDM mic, but Zephyr has **no ESP32 PDM/DMIC driver** |
+| Device (`omi-<device>`) | Zephyr board target | SoC | Build | Mic |
+|---|---|---|---|---|
+| `xiao52`      | `xiao_ble/nrf52840/sense`         | nRF52840 | ✅ FLASH 34% / RAM 64% | ✅ PDM + LED + battery |
+| `xiao54l`     | `xiao_nrf54l15/nrf54l15/cpuapp`   | nRF54L15 | ✅ FLASH 17% / RAM 61% | ✅ PDM |
+| `xiaomg24`    | `xiao_mg24/efr32mg24b220f1536im48` | EFR32MG24 | ✅ FLASH 16% / RAM 23% | ⛔ pending (analog mic → ADC backend) |
+| `xiaoesp32s3` | `xiao_esp32s3/esp32s3/procpu`     | ESP32-S3 | ✅ (build-only, no blobs) | ⛔ pending (PDM, no ESP32 driver) |
 
-**The catch for the last two is a missing *driver*, not a missing overlay.** An
-overlay can only bind pins to a driver that already exists. Reading the Seeed
-schematics:
+All four **build** on Zephyr v4.4.1. The two Nordic boards are fully functional
+(mic + BLE audio). The other two build as **BLE placeholders** with the mic
+disabled (`CONFIG_OMI_ENABLE_MIC=n`) — see below.
+
+**Why mg24 / esp32s3 have no working mic yet (a missing *driver*, not a missing
+overlay).** An overlay only binds pins to a driver that already exists; reading
+the Seeed schematics:
 
 - **xiaoesp32s3** — onboard PDM mic MSM261D3526H1CPM, **CLK=GPIO42, DIN=GPIO41**.
   But Zephyr v4.4.1's ESP32 I2S driver has no PDM-RX mode and there's no `dmic`
   backend for ESP32. Needs a Zephyr PDM driver first (extend `i2s_esp32` for
-  PDM-RX + mpxxdtyy, or wrap ESP-IDF I2S-PDM). See `boards/xiaoesp32s3.overlay`.
+  PDM-RX + mpxxdtyy, or wrap ESP-IDF I2S-PDM). Also: the ESP32 BT controller
+  needs Espressif blobs (`west blobs fetch hal_espressif`); until those are
+  present this board uses `CONFIG_BUILD_ONLY_NO_BLOBS=y` (builds, BLE not
+  functional on device). See `boards/xiaoesp32s3.{conf,overlay}`.
 - **xiaomg24** — onboard mic is the **MSM381ACT001, an ANALOG MEMS mic**
   (DATA=PC9, PWR=PC8), not PDM. It can't use the DMIC path at all; it needs a
-  16 kHz ADC-sampling mic backend feeding `codec_receive_pcm()`. See
-  `boards/xiaomg24.overlay`.
+  16 kHz ADC-sampling mic backend feeding `codec_receive_pcm()`. BLE is fully
+  functional (Silabs blobs fetched). See `boards/xiaomg24.overlay`.
 
-Both are real firmware development (a driver / an ADC backend) plus on-device
-testing — captured in the overlay files with the exact pins for whoever does it.
+Both mics are real firmware work (a PDM driver / an ADC backend) plus on-device
+testing — the exact pins are recorded in the overlay files for whoever does it.
 
 Add another board by dropping `boards/<device>.conf` + `boards/<device>.overlay`
 and one line in `scripts/build_all.*`.
