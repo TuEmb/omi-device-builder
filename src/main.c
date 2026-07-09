@@ -1,12 +1,14 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-#include "codec.h"
 #include "config.h"
 #include "led.h"
-#include "mic.h"
 #include "settings.h"
 #include "transport.h"
+#ifdef CONFIG_OMI_ENABLE_MIC
+#include "codec.h"
+#include "mic.h"
+#endif
 #ifdef CONFIG_OMI_ENABLE_BATTERY
 #include "battery.h"
 #endif
@@ -21,6 +23,7 @@ bool is_charging = false;
 extern uint8_t battery_percentage;
 #endif
 
+#ifdef CONFIG_OMI_ENABLE_MIC
 /* Opus-encoded frame ready -> queue for BLE notification. */
 static void codec_handler(uint8_t *data, size_t len)
 {
@@ -36,6 +39,7 @@ static void mic_handler(int16_t *buffer)
         LOG_ERR("codec_receive_pcm failed: %d", err);
     }
 }
+#endif
 
 #ifdef CONFIG_OMI_ENABLE_LED
 /* Simple status LED: solid blue when connected, blinking red while advertising. */
@@ -67,6 +71,7 @@ int main(void)
     led_start();
 #endif
 
+#ifdef CONFIG_OMI_ENABLE_MIC
     /* Audio pipeline: mic -> codec -> transport. */
     set_codec_callback(codec_handler);
     if (codec_start()) {
@@ -78,6 +83,9 @@ int main(void)
     if (mic_start()) {
         LOG_ERR("mic_start failed");
     }
+#else
+    LOG_WRN("Mic disabled for this board (no Zephyr driver yet) - BLE only, no audio");
+#endif
 
     if (transport_start()) {
         LOG_ERR("transport_start failed");

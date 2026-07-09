@@ -2,6 +2,15 @@ source "Kconfig.zephyr"
 
 menu "Omi Device Builder Configuration"
 
+config OMI_ENABLE_MIC
+    bool "Microphone capture + codec pipeline"
+    default y
+    help
+      Enable PDM microphone capture and the Opus codec pipeline. Turn OFF for
+      boards whose mic has no Zephyr driver yet (e.g. XIAO ESP32S3 Sense PDM,
+      XIAO MG24 Sense analog mic) so the firmware still builds as a BLE device
+      without an audio source.
+
 config OMI_CODEC_OPUS
     bool "Opus audio codec"
     default y

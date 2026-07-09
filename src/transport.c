@@ -17,8 +17,10 @@
 
 #include "config.h"
 #include "features.h"
-#include "mic.h"
 #include "settings.h"
+#ifdef CONFIG_OMI_ENABLE_MIC
+#include "mic.h"
+#endif
 #ifdef CONFIG_OMI_ENABLE_BATTERY
 #include "battery.h"
 #endif
@@ -350,7 +352,9 @@ static ssize_t settings_mic_gain_write_handler(struct bt_conn *conn,
         new_gain = 8;
     }
     (void) app_settings_save_mic_gain(new_gain);
+#ifdef CONFIG_OMI_ENABLE_MIC
     mic_set_gain(new_gain);
+#endif
     return len;
 }
 

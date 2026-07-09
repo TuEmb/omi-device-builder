@@ -7,11 +7,13 @@ project(omi_device_builder)
 
 target_sources(app PRIVATE
     src/main.c
-    src/mic.c
-    src/codec.c
     src/transport.c
     src/settings.c
 )
+
+if(CONFIG_OMI_ENABLE_MIC)
+    target_sources(app PRIVATE src/mic.c src/codec.c)
+endif()
 
 if(CONFIG_OMI_ENABLE_BATTERY)
     target_sources(app PRIVATE src/battery.c)
@@ -27,7 +29,7 @@ endif()
 
 target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-if(CONFIG_OMI_CODEC_OPUS)
+if(CONFIG_OMI_CODEC_OPUS AND CONFIG_OMI_ENABLE_MIC)
     add_subdirectory(src/opus-1.2.1/)
     target_link_libraries(app PRIVATE opus_codec)
 endif()
