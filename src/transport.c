@@ -838,7 +838,9 @@ int transport_start(void)
     bt_gatt_service_register(&features_service);
     bt_gatt_service_register(&time_sync_service);
 
-    err = bt_le_adv_start(BT_LE_ADV_CONN, bt_ad, ARRAY_SIZE(bt_ad), bt_sd, ARRAY_SIZE(bt_sd));
+    /* BT_LE_ADV_CONN was removed in Zephyr 4.4; FAST_1 is the recommended
+     * connectable-advertising parameter set. */
+    err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, bt_ad, ARRAY_SIZE(bt_ad), bt_sd, ARRAY_SIZE(bt_sd));
     if (err) {
         LOG_ERR("Advertising failed to start (err %d)", err);
     } else {
