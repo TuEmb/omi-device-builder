@@ -28,25 +28,24 @@ live streaming.
 **Goal: support every XIAO Sense board that has an onboard microphone.** The C3
 and RP2040 XIAOs have no mic and are out of scope.
 
-Build status verified against the pinned Zephyr **v4.2.0**:
+Build status verified against the pinned Zephyr **v4.4.1** (Zephyr SDK 1.0.1):
 
 | Device (`omi-<device>`) | Zephyr board target | SoC | Status |
 |---|---|---|---|
-| `xiao52`      | `xiao_ble/nrf52840/sense`         | nRF52840 | ✅ **builds** (mic + RGB LED + battery) — verified |
-| `xiao54l`     | `xiao_nrf54l15/nrf54l15/cpuapp`   | nRF54L15 | ❌ board not in v4.2.0 — needs newer Zephyr (bump `west.yml`) |
+| `xiao52`      | `xiao_ble/nrf52840/sense`         | nRF52840 | ✅ **builds** — FLASH 34% / RAM 64% (mic + RGB LED + battery) |
+| `xiao54l`     | `xiao_nrf54l15/nrf54l15/cpuapp`   | nRF54L15 | ✅ **builds** — FLASH 17% / RAM 61% (mic; single LED) |
 | `xiaomg24`    | `xiao_mg24/efr32mg24b220f1536im48` | EFR32MG24 | ⛔ board has **no mic node** in Zephyr — needs PDM DT bring-up |
 | `xiaoesp32s3` | `xiao_esp32s3/esp32s3/procpu`     | ESP32-S3 | ⛔ board has **no mic node** in Zephyr + needs Espressif blobs |
 
-**The catch:** only `xiao_ble` wires up a microphone in upstream Zephyr. The
-`xiao_mg24` and `xiao_esp32s3` board DTS define **no PDM/I2S mic node** (and only
-a single `led0`), so `omi-xiaomg24`/`omi-xiaoesp32s3` fail at devicetree
-(`undefined node label 'pdm0'`) until someone adds the mic peripheral node with
-the real schematic pins. That's genuine per-board hardware bring-up, not just an
-alias — it needs the board schematic and on-device testing.
+**The catch for the last two:** only `xiao_ble` and `xiao_nrf54l15` wire up a
+microphone in upstream Zephyr v4.4.1. The `xiao_mg24` and `xiao_esp32s3` board
+DTS define **no PDM/I2S mic node** (and only a single `led0`), so
+`omi-xiaomg24`/`omi-xiaoesp32s3` fail at devicetree (`undefined node label
+'pdm0'`) until someone adds the mic peripheral node with the real schematic pins.
+That's genuine per-board hardware bring-up, not just an alias — it needs the
+board schematic and on-device testing.
 
-To finish each remaining board:
-- **xiao54l** — bump `west.yml` `revision:` to a Zephyr tag/commit that includes
-  `xiao_nrf54l15`, then verify the mic node + overlay pins.
+To finish the remaining two boards:
 - **xiaomg24** — in `boards/xiaomg24.overlay`, define the EFR32 PDM node with the
   XIAO MG24 Sense mic pins + `dmic-dev` alias; add Silabs BLE blobs if required.
 - **xiaoesp32s3** — `west blobs fetch hal_espressif`, then define the I2S-PDM RX
@@ -57,11 +56,12 @@ and one line in `scripts/build_all.*`.
 
 ## Requirements
 
-- **west** + a Python venv, and the **Zephyr SDK** toolchain (covers arm for
-  nRF/MG24 and xtensa/riscv for ESP32-S3). NCS's bundled toolchain also works
-  for the Nordic boards.
+- **west** + a Python venv, and the **Zephyr SDK ≥ 1.0** (required by Zephyr
+  v4.4.x — the arm toolchain covers nRF/MG24, xtensa covers ESP32-S3). Install it
+  with `west sdk install` (or `west sdk install -t arm-zephyr-eabi` for just the
+  Nordic/MG24 boards). Older bundled SDKs (0.16/0.17) are **not** accepted by v4.4.
 - This repo is a **west manifest repo** (`west.yml`) that pulls a **pinned Zephyr
-  release** (currently `v4.2.0`) and all vendor HALs. Change the `revision:` in
+  release** (currently `v4.4.1`) and all vendor HALs. Change the `revision:` in
   `west.yml` to move versions.
 
 ## Setup (one-time)
@@ -77,6 +77,9 @@ west init -l omi-device-builder
 west update                       # clones Zephyr + all HAL modules (takes a while)
 west zephyr-export
 pip install -r zephyr/scripts/requirements.txt
+
+# Zephyr SDK >= 1.0 (required by v4.4). ARM-only is enough for xiao52/xiao54l/mg24:
+west sdk install -t arm-zephyr-eabi
 
 # ESP32-S3 only: fetch Espressif binary blobs
 west blobs fetch hal_espressif
