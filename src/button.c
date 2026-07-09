@@ -3,7 +3,9 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#ifdef CONFIG_POWEROFF
 #include <zephyr/sys/poweroff.h>
+#endif
 
 LOG_MODULE_REGISTER(button, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -74,7 +76,12 @@ void register_button_service(void)
 
 void turnoff_all(void)
 {
+#ifdef CONFIG_POWEROFF
     LOG_INF("Powering off");
     k_msleep(100);
     sys_poweroff();
+#else
+    /* SoC has no Zephyr poweroff support (e.g. EFR32MG24) — nothing to do. */
+    LOG_WRN("Power off not supported on this SoC");
+#endif
 }
