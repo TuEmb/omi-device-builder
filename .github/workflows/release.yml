@@ -26,8 +26,26 @@ jobs:
           path: omi-device-builder
           fetch-depth: 0
 
+      # Cache the west-managed source (Zephyr + all HAL/bootloader modules). The
+      # key is tied to west.yml, which pins Zephyr to a fixed revision — so after
+      # the first run the key stays stable and `west update` becomes near-instant
+      # instead of re-cloning ~GBs each time. Bump happens automatically when
+      # west.yml changes.
+      - name: Cache Zephyr workspace
+        uses: actions/cache@v4
+        with:
+          path: |
+            zephyr
+            modules
+            bootloader
+            tools
+          key: zephyr-ws-${{ hashFiles('omi-device-builder/west.yml') }}
+          restore-keys: |
+            zephyr-ws-
+
       # Sets up west, pulls Zephyr + modules from west.yml, installs the matching
-      # Zephyr SDK toolchains (arm for the Nordic/Silabs boards, xtensa for ESP32-S3).
+      # Zephyr SDK toolchains (arm for the Nordic/Silabs boards, xtensa for
+      # ESP32-S3). The SDK is cached by this action across runs.
       - name: Set up Zephyr
         uses: zephyrproject-rtos/action-zephyr-setup@v1
         with:
