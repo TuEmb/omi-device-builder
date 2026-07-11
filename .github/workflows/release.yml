@@ -1,0 +1,81 @@
+name: Release
+
+# Manually triggered: enter a tag, it builds every board (+ the xiao52 OTA
+# bundle), creates the tag, and publishes a GitHub Release with the firmware.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v1.0.0)"
+        required: true
+      prerelease:
+        description: "Mark as pre-release"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # needed to create the tag + release
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: omi-device-builder
+          fetch-depth: 0
+
+      # Sets up west, pulls Zephyr + modules from west.yml, installs the matching
+      # Zephyr SDK toolchains (arm for the Nordic/Silabs boards, xtensa for ESP32-S3).
+      - name: Set up Zephyr
+        uses: zephyrproject-rtos/action-zephyr-setup@v1
+        with:
+          app-path: omi-device-builder
+          toolchains: arm-zephyr-eabi:xtensa-espressif_esp32s3_zephyr-elf
+
+      # Silabs (MG24) BLE needs the RAIL blob; ESP32-S3 builds blob-free
+      # (CONFIG_BUILD_ONLY_NO_BLOBS=y in its board conf).
+      - name: Fetch vendor blobs
+        working-directory: omi-device-builder
+        run: west blobs fetch hal_silabs || true
+
+      - name: Build all boards
+        working-directory: omi-device-builder
+        run: bash scripts/build_all.sh
+
+      - name: Build xiao52 OTA bundle (MCUboot + signed app)
+        working-directory: omi-device-builder
+        run: bash scripts/build_ota.sh
+
+      - name: Collect artifacts
+        working-directory: omi-device-builder
+        run: |
+          mkdir -p dist
+          # Per-board application images (from build_all).
+          cp build/omi-*.hex dist/ 2>/dev/null || true
+          # xiao52 OTA bundle: bootloader, signed app (J-Link), and the .bin to
+          # upload over BLE/USB-C with mcumgr.
+          ota=build/omi-xiao52-mcuboot
+          cp "$ota/mcuboot/zephyr/zephyr.hex"                  dist/omi-xiao52-mcuboot.hex
+          cp "$ota/omi-device-builder/zephyr/zephyr.signed.hex" dist/omi-xiao52-app-signed.hex
+          cp "$ota/omi-device-builder/zephyr/zephyr.signed.bin" dist/omi-xiao52-app-update.bin
+          echo "=== artifacts ===" && ls -la dist
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          name: ${{ inputs.tag }}
+          prerelease: ${{ inputs.prerelease }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: omi-device-builder/dist/*
+          body: |
+            Firmware for the Omi-compatible XIAO Sense builds.
+
+            **XIAO nRF52840 Sense (recommended):** first flash `omi-xiao52-mcuboot.hex`
+            + `omi-xiao52-app-signed.hex` over J-Link; afterwards update wirelessly
+            (BLE/USB-C) with `omi-xiao52-app-update.bin`. See the README.
+
+            Other boards: `omi-<board>.hex`.
