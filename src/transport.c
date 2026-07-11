@@ -265,6 +265,22 @@ static const struct bt_data bt_sd[] = {
     BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_DIS_VAL)),
 };
 
+/* (Re)start connectable advertising. BT_LE_ADV_CONN was removed in Zephyr 4.4;
+ * FAST_1 is the recommended connectable-advertising parameter set. Safe to call
+ * from the disconnected callback to resume advertising after a peer drops. */
+static void start_advertising(void)
+{
+    int err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, bt_ad, ARRAY_SIZE(bt_ad), bt_sd, ARRAY_SIZE(bt_sd));
+    if (err == -EALREADY) {
+        return;
+    }
+    if (err) {
+        LOG_ERR("Advertising failed to start (err %d)", err);
+    } else {
+        LOG_INF("Advertising started");
+    }
+}
+
 //
 // --- Characteristic handlers ---
 //
@@ -519,6 +535,10 @@ static void _transport_disconnected(struct bt_conn *conn, uint8_t reason)
     k_sem_init(&audio_tx_sem,
                CONFIG_BT_CONN_TX_MAX - AUDIO_TX_RESERVED_SLOTS,
                CONFIG_BT_CONN_TX_MAX - AUDIO_TX_RESERVED_SLOTS);
+
+    /* Resume advertising so the device is discoverable again after a peer
+     * disconnects (previously it went silent after the first connection). */
+    start_advertising();
 }
 
 static bool _le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
@@ -842,14 +862,7 @@ int transport_start(void)
     bt_gatt_service_register(&features_service);
     bt_gatt_service_register(&time_sync_service);
 
-    /* BT_LE_ADV_CONN was removed in Zephyr 4.4; FAST_1 is the recommended
-     * connectable-advertising parameter set. */
-    err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, bt_ad, ARRAY_SIZE(bt_ad), bt_sd, ARRAY_SIZE(bt_sd));
-    if (err) {
-        LOG_ERR("Advertising failed to start (err %d)", err);
-    } else {
-        LOG_INF("Advertising started");
-    }
+    start_advertising();
 
 #ifdef CONFIG_OMI_ENABLE_BATTERY
     if (battery_charge_start()) {

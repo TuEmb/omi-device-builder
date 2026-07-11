@@ -4,9 +4,20 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+#include <hal/nrf_pdm.h>
+
 #include "config.h"
 
+/* nRF PDM hardware gain (register value, not dB). Range 0x00 (-20 dB) ..
+ * 0x28 (0 dB, reset default) .. 0x50 (+20 dB). The Zephyr dmic driver leaves
+ * this at the 0 dB default, which is too quiet for the onboard MSM261 mic. */
+#define MIC_PDM_GAIN 0x50 /* +20 dB, tune down if loud sounds clip */
+
 LOG_MODULE_REGISTER(mic, CONFIG_LOG_DEFAULT_LEVEL);
+
+/* TEMP DEBUG: log captured PCM amplitude (peak/mean) ~once per second so we can
+ * tell real audio from silence/noise. Set to 0 to disable. */
+#define MIC_LEVEL_DEBUG 0
 
 /* Standard Zephyr DMIC (nRF PDM) device. Each board overlay must provide a
  * `dmic-dev` alias pointing at its PDM peripheral (with the mic pins wired via
@@ -83,6 +94,29 @@ static void mic_entry(void *a, void *b, void *c)
         size_t count = size / sizeof(int16_t);
         apply_gain(pcm, count);
 
+#if MIC_LEVEL_DEBUG
+        {
+            static uint32_t dbg_ctr;
+            int32_t peak = 0;
+            int64_t sum_abs = 0;
+            for (size_t i = 0; i < count; i++) {
+                int32_t a = pcm[i] < 0 ? -(int32_t) pcm[i] : (int32_t) pcm[i];
+                if (a > peak) {
+                    peak = a;
+                }
+                sum_abs += a;
+            }
+            if ((dbg_ctr++ % 10) == 0) { /* ~1 Hz (blocks are 100 ms) */
+                LOG_INF("mic level: peak=%d mean_abs=%d s0=%d s1=%d n=%u",
+                        (int) peak,
+                        (int) (count ? sum_abs / (int64_t) count : 0),
+                        pcm[0],
+                        count > 1 ? pcm[1] : 0,
+                        (unsigned) count);
+            }
+        }
+#endif
+
         if (_callback) {
             /* omi's mix_handler passes a pointer; the codec path consumes a
              * fixed MIC_BLOCK; keep parity with the original contract. */
@@ -131,6 +165,12 @@ int mic_start(void)
         LOG_ERR("dmic_configure failed: %d", ret);
         return ret;
     }
+
+    /* The Zephyr dmic driver configures the PDM at 0 dB gain, which is too
+     * quiet for this board's mic. Bump the PDM hardware gain directly via the
+     * nrfx HAL (persists across start; the driver never rewrites it). */
+    nrf_pdm_gain_set((NRF_PDM_Type *) DT_REG_ADDR(DT_ALIAS(dmic_dev)), MIC_PDM_GAIN, MIC_PDM_GAIN);
+    LOG_INF("PDM gain set to 0x%02x", MIC_PDM_GAIN);
 
     ret = dmic_trigger(dmic_dev, DMIC_TRIGGER_START);
     if (ret < 0) {
