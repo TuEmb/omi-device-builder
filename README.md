@@ -6,6 +6,8 @@ streams live audio to the [Omi app](https://www.omi.me/) over Bluetooth LE.
 It's open firmware you build once and flash onto your XIAO. After the first flash
 you can update it wirelessly from your phone or over USB-C — no debugger needed.
 
+<img width="632" height="523" alt="image" src="https://github.com/user-attachments/assets/2c583652-8ab4-469b-9e67-b60671505f4f" />
+
 ---
 
 ## ✨ What you get
