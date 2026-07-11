@@ -17,3 +17,20 @@
  * Once such a driver + binding exist, add its node here (CLK=42, DIN=41) and the
  * `dmic-dev` alias that src/mic.c looks up.
  */
+
+/* --- user button (merged from the former overlays/xiaoesp32s3.overlay) --- */
+/* User button for XIAO ESP32S3 Sense. Edit the pin to your wiring.
+ * ESP32-S3 GPIOs are on &gpio0. */
+/ {
+	buttons {
+		compatible = "gpio-keys";
+		user_button: user_button {
+			gpios = <&gpio0 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; /* TODO: your pin */
+			label = "User button";
+		};
+	};
+
+	aliases {
+		sw0 = &user_button;
+	};
+};

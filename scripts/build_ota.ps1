@@ -24,8 +24,9 @@ $root = (Resolve-Path "$PSScriptRoot/..").Path
 west build --sysbuild -b xiao_ble/nrf52840/sense -s $root -d "$root/build/omi-xiao52-mcuboot" -p always -- `
     "-DSNIPPET_ROOT=$root" `
     "-Domi-device-builder_SNIPPET=ota;usb-console" `
-    "-DEXTRA_CONF_FILE=boards/xiao52.conf" `
-    "-DEXTRA_DTC_OVERLAY_FILE=boards/xiao52.overlay;overlays/xiao52.overlay"
+    "-DEXTRA_CONF_FILE=boards/xiao52/xiao52.conf" `
+    "-DEXTRA_DTC_OVERLAY_FILE=boards/xiao52/xiao52.overlay;boards/xiao52/ota.overlay" `
+    "-Dmcuboot_EXTRA_DTC_OVERLAY_FILE=$root/boards/xiao52/mcuboot.overlay"
 
 if ($LASTEXITCODE -ne 0) { Write-Host "OTA build FAILED" -ForegroundColor Red; exit 1 }
 Write-Host "OTA build done:" -ForegroundColor Green

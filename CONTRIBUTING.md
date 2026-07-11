@@ -57,17 +57,31 @@ is built via sysbuild (`sysbuild.conf`, `sysbuild/`).
 
 ## Adding a board
 
-1. Copy the templates:
+Everything for a board lives in its own folder `boards/<board>/` — to change
+anything about a board you only touch that one folder.
+
+1. Copy the template folder and rename its files:
    ```sh
-   cp boards/template.overlay boards/<board>.overlay
-   cp boards/template.conf    boards/<board>.conf
+   cp -r boards/template boards/<board>
+   cd boards/<board> && mv template.conf <board>.conf && mv template.overlay <board>.overlay
    ```
-2. In the `.overlay`, declare **only** the hardware your board has (uncomment and
-   fill the blocks — mic `dmic-dev`, LED node, button `sw0`, battery ADC, storage
-   `sdmmc_disk`/`omi_storage`). Anything you omit compiles out automatically.
-3. In the `.conf`, set `CONFIG_BT_DEVICE_NAME="omi-<board>"` and any backend
+2. In `<board>.overlay`, declare **only** the hardware your board has (uncomment
+   and fill the blocks — mic `dmic-dev`, LED node, button `sw0`, battery ADC,
+   storage `sdmmc_disk`/`omi_storage`). Anything you omit compiles out. The user
+   button lives in this same file now (no separate `overlays/` folder).
+3. In `<board>.conf`, set `CONFIG_BT_DEVICE_NAME="omi-<board>"` and any backend
    override (e.g. `CONFIG_OMI_MIC_BACKEND_ADC=y` for an analog mic).
 4. Build: `west build -b <board target>` (or add a line to `scripts/build_all.*`).
+5. For the OTA build, keep `ota.overlay` + `mcuboot.overlay` (flash partition
+   layout) sized to your chip; otherwise delete them.
+
+```
+boards/<board>/
+├── <board>.conf        # app Kconfig (BLE name, backend overrides)
+├── <board>.overlay     # devicetree: hardware + user button
+├── ota.overlay         # OTA build: app flash partitions (slot0)   [optional]
+└── mcuboot.overlay     # OTA build: bootloader flash partitions     [optional]
+```
 
 Minimum for a functional device is **mic + LED**; BLE-only placeholder boards may
 disable both.

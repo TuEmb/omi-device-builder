@@ -21,15 +21,12 @@ for name in "${!BOARDS[@]}"; do
     fi
     board="${BOARDS[$name]}"
     outdir="build/omi-$name"
-    # Board overlay + optional user overlay (e.g. button pin) from overlays/.
-    overlays="boards/$name.overlay"
-    if [ -f "overlays/$name.overlay" ]; then
-        overlays="$overlays;overlays/$name.overlay"
-    fi
+    dir="boards/$name"
     echo "==> Building omi-$name (board $board)"
+    # Everything for a board lives in boards/<name>/ .
     west build -b "$board" -d "$outdir" -p always -- \
-        "-DEXTRA_CONF_FILE=boards/$name.conf" \
-        "-DEXTRA_DTC_OVERLAY_FILE=$overlays"
+        "-DEXTRA_CONF_FILE=$dir/$name.conf" \
+        "-DEXTRA_DTC_OVERLAY_FILE=$dir/$name.overlay"
     cp "$outdir/zephyr/zephyr.hex" "build/omi-$name.hex"
     echo "    -> build/omi-$name.hex"
 done

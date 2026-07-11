@@ -19,16 +19,13 @@ foreach ($d in $devices) {
     if ($only -and $d.name -ne $only) { continue }
 
     $outdir = "build/omi-$($d.name)"
+    $dir = "boards/$($d.name)"
     Write-Host "==> Building omi-$($d.name)  (board $($d.board))" -ForegroundColor Cyan
 
-    # Board overlay + optional user overlay (e.g. button pin) from overlays/.
-    $overlays = "boards/$($d.name).overlay"
-    $userOverlay = "overlays/$($d.name).overlay"
-    if (Test-Path $userOverlay) { $overlays = "$overlays;$userOverlay" }
-
+    # Everything for a board lives in boards/<name>/ .
     west build -b $d.board -d $outdir -p always -- `
-        "-DEXTRA_CONF_FILE=boards/$($d.name).conf" `
-        "-DEXTRA_DTC_OVERLAY_FILE=$overlays"
+        "-DEXTRA_CONF_FILE=$dir/$($d.name).conf" `
+        "-DEXTRA_DTC_OVERLAY_FILE=$dir/$($d.name).overlay"
 
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Build FAILED for omi-$($d.name)" -ForegroundColor Red

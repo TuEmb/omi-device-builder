@@ -1,48 +1,13 @@
 /*
- * MCUboot flash layout for omi-xiao52 — applied to the MCUBOOT image
- * (auto-picked up by sysbuild from sysbuild/<image>.overlay). Same partition
- * table as overlays/xiao52_ota.overlay, but MCUboot links into boot_partition.
+ * Generic MCUboot-image tweaks (applied to every board's MCUboot build via
+ * sysbuild). Board-specific flash partitions live in
+ * boards/<board>/mcuboot.overlay and are passed with
+ * mcuboot_EXTRA_DTC_OVERLAY_FILE (see scripts/build_ota.*).
+ *
+ * USB CDC ACM port for MCUboot serial recovery over Type-C.
  */
-
-/ {
-	chosen {
-		zephyr,code-partition = &boot_partition;
-	};
-};
-
-/* USB CDC ACM port for MCUboot serial recovery over Type-C. */
 &zephyr_udc0 {
 	cdc_acm_uart0: cdc_acm_uart0 {
 		compatible = "zephyr,cdc-acm-uart";
-	};
-};
-
-&flash0 {
-	/delete-node/ partitions;
-
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x00000000 0x00014000>;
-		};
-
-		slot0_partition: partition@14000 {
-			label = "image-0";
-			reg = <0x00014000 0x00070000>;
-		};
-
-		slot1_partition: partition@84000 {
-			label = "image-1";
-			reg = <0x00084000 0x00070000>;
-		};
-
-		storage_partition: partition@f4000 {
-			label = "storage";
-			reg = <0x000f4000 0x00008000>;
-		};
 	};
 };
