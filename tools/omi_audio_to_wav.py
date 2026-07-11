@@ -89,16 +89,31 @@ class Collector:
         return self._packets, len(self.frames), self._lost
 
 
+async def find_by_name_prefix(name, timeout=15):
+    """Match any device whose advertised name starts with `name` (case-insensitive).
+    Prefix match tolerates a name truncated to fit the adv packet, e.g. an older
+    build shows 'omi-xiao' instead of 'omi-xiao52'."""
+    print(f"Scanning for a device named '{name}*' ...")
+    found = await BleakScanner.discover(timeout=timeout, return_adv=True)
+    want = name.lower()
+    for dev, adv in found.values():
+        nm = adv.local_name or dev.name
+        if nm and nm.lower().startswith(want):
+            print(f"Found '{nm}' ({dev.address})")
+            return dev
+    return None
+
+
 async def capture(address, name, seconds):
     if address:
         device = await BleakScanner.find_device_by_address(address, timeout=10)
         if not device:
             sys.exit(f"Device {address} not found (is it advertising / not connected elsewhere?)")
     else:
-        print(f"Scanning for '{name}' ...")
-        device = await BleakScanner.find_device_by_name(name, timeout=15)
+        device = await find_by_name_prefix(name, timeout=15)
         if not device:
-            sys.exit(f"'{name}' not found. Make sure it advertises and no phone is connected.")
+            sys.exit(f"No device named '{name}*' found. Make sure it advertises "
+                     "and no phone/app is connected to it.")
 
     coll = Collector()
     loop = asyncio.get_event_loop()
@@ -171,7 +186,7 @@ def decode_to_wav(frames, out_path):
 
 def main():
     ap = argparse.ArgumentParser(description="Capture omi BLE audio -> WAV")
-    ap.add_argument("--name", default="omi-xiao52", help="BLE name to scan for")
+    ap.add_argument("--name", default="omi-xiao", help="BLE name to scan for")
     ap.add_argument("--address", help="BLE MAC/UUID (skip scanning by name)")
     ap.add_argument("--seconds", type=float, default=10.0, help="capture duration")
     ap.add_argument("--out", default="omi_audio.wav", help="output WAV path")
