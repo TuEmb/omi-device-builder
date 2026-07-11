@@ -1,0 +1,5 @@
+name: usb-console
+# Route the console/log output to the board's USB CDC ACM port so a user can
+# watch firmware logs over Type-C with any serial terminal (no J-Link/RTT).
+append:
+  EXTRA_CONF_FILE: usb-console.conf

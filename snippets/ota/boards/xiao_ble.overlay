@@ -1,14 +1,14 @@
 /*
- * MCUboot flash layout for omi-xiao52 (nRF52840, 1 MB flash) — applied to the
- * APPLICATION image. Replaces the stock UF2/SoftDevice partition table with a
- * MCUboot boot + dual-slot layout so firmware can be updated OTA over BLE
- * (mcumgr SMP). The matching layout for the MCUboot image itself lives in
- * sysbuild/mcuboot.overlay (identical partitions, different code-partition).
+ * MCUboot flash layout for xiao_ble (nRF52840, 1 MB flash) — APPLICATION image.
+ * Replaces the stock UF2/SoftDevice partition table with a MCUboot boot +
+ * dual-slot layout so firmware can be updated OTA over BLE (mcumgr SMP). The
+ * matching layout for the MCUboot image itself lives in sysbuild/mcuboot.overlay
+ * (identical partitions, different code-partition).
  *
- *   0x00000000  mcuboot        64 kB
- *   0x00010000  slot0 (app)   448 kB
- *   0x00080000  slot1 (dfu)   448 kB
- *   0x000f0000  storage        32 kB
+ *   0x00000000  mcuboot        80 kB
+ *   0x00014000  slot0 (app)   448 kB
+ *   0x00084000  slot1 (dfu)   448 kB
+ *   0x000f4000  storage        32 kB
  */
 
 / {

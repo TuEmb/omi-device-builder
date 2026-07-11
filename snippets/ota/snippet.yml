@@ -1,0 +1,9 @@
+name: ota
+# BLE OTA (MCUboot signed image + mcumgr SMP-BT). Build with --sysbuild so the
+# MCUboot bootloader image is built too (see sysbuild.conf / sysbuild/).
+append:
+  EXTRA_CONF_FILE: ota.conf
+boards:
+  xiao_ble/nrf52840/sense:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/xiao_ble.overlay
