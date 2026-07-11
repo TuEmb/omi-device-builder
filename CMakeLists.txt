@@ -13,22 +13,22 @@ target_sources(app PRIVATE
 )
 
 # --- Components (gated per feature; see Kconfig) ---
-if(CONFIG_OMI_ENABLE_LED)
+if(CONFIG_OMI_LED)
     target_sources(app PRIVATE src/components/led/led.c)
 endif()
 
-if(CONFIG_OMI_ENABLE_MIC)
+if(CONFIG_OMI_MIC)
     target_sources(app PRIVATE
         src/components/mic/mic.c
         src/components/codec/codec.c
     )
 endif()
 
-if(CONFIG_OMI_ENABLE_BATTERY)
+if(CONFIG_OMI_BATTERY)
     target_sources(app PRIVATE src/components/battery/battery.c)
 endif()
 
-if(CONFIG_OMI_ENABLE_BUTTON)
+if(CONFIG_OMI_BUTTON)
     target_sources(app PRIVATE src/components/button/button.c)
 endif()
 
@@ -45,7 +45,7 @@ target_include_directories(app PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/services
 )
 
-if(CONFIG_OMI_CODEC_OPUS AND CONFIG_OMI_ENABLE_MIC)
+if(CONFIG_OMI_CODEC_OPUS AND CONFIG_OMI_MIC)
     add_subdirectory(src/opus-1.2.1/)
     target_link_libraries(app PRIVATE opus_codec)
 endif()

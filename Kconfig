@@ -1,38 +1,52 @@
 source "Kconfig.zephyr"
 
-menu "Omi Device Builder Configuration"
+menu "Omi Device Builder"
 
-config OMI_ENABLE_MIC
+comment "Components — a board's hardware is declared in its devicetree; each"
+comment "component below auto-enables when the matching DT node/alias exists."
+comment "A contributor adding a board normally only edits the .overlay, not this."
+
+config OMI_MIC
     bool "Microphone capture + codec pipeline"
-    default y
+    default y if $(dt_alias_enabled,dmic-dev)
     help
-      Enable PDM microphone capture and the Opus codec pipeline. Turn OFF for
-      boards whose mic has no Zephyr driver yet (e.g. XIAO ESP32S3 Sense PDM,
-      XIAO MG24 Sense analog mic) so the firmware still builds as a BLE device
-      without an audio source.
+      Microphone capture (feeds the Opus codec + BLE audio stream). Auto-on when
+      the board devicetree provides a `dmic-dev` alias (a PDM mic). Turn OFF for
+      boards whose mic has no Zephyr driver yet (analog/ESP32 PDM) so the
+      firmware still builds as a BLE-only device.
 
 config OMI_CODEC_OPUS
     bool "Opus audio codec"
     default y
     help
-      Enable the Opus audio codec (wire-compatible with the Omi app).
+      Opus audio codec, wire-compatible with the Omi app. The Opus encoder is
+      only compiled when OMI_MIC is also on (see CMakeLists), but the codec
+      framing constants (CODEC_ID, packet size) are part of the BLE audio
+      protocol and are kept available even on BLE-only boards.
 
-config OMI_ENABLE_BATTERY
+config OMI_LED
+    bool "Status LED"
+    default y if $(dt_compat_enabled,gpio-leds) || $(dt_compat_enabled,pwm-leds)
+    help
+      Status LED (connection/advertising indication). Auto-on when the board has
+      a `gpio-leds` or `pwm-leds` node.
+
+config OMI_BATTERY
     bool "Battery monitoring"
     default y
     help
-      Enable battery voltage ADC + BLE Battery Service.
+      Battery voltage (ADC divider) + BLE Battery Service. Enabled by default;
+      set =n on boards without battery sensing. (TODO: auto-detect once battery
+      moves to a `voltage-divider` devicetree node.)
 
-config OMI_ENABLE_BUTTON
+config OMI_BUTTON
     bool "User button"
-    default y
+    default y if $(dt_alias_enabled,sw0)
     help
-      Enable user-button handling (long-press power off).
+      User button (long-press power off). Auto-on when the board devicetree
+      provides an `sw0` alias (see overlays/<board>.overlay).
 
-config OMI_ENABLE_LED
-    bool "Status LED"
-    default y
-    help
-      Enable the RGB status LED (PWM, connection/advertising indication).
+comment "Minimum recommended for a functional device: OMI_MIC + OMI_LED."
+comment "BLE-only placeholder boards (no mic/LED driver yet) may disable both."
 
 endmenu

@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#ifdef CONFIG_OMI_ENABLE_BATTERY
+#ifdef CONFIG_OMI_BATTERY
 extern uint8_t battery_percentage;
 #endif
 

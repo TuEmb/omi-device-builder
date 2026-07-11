@@ -5,11 +5,11 @@
 #include "led.h"
 #include "settings.h"
 #include "transport.h"
-#ifdef CONFIG_OMI_ENABLE_MIC
+#ifdef CONFIG_OMI_MIC
 #include "codec.h"
 #include "mic.h"
 #endif
-#ifdef CONFIG_OMI_ENABLE_BATTERY
+#ifdef CONFIG_OMI_BATTERY
 #include "battery.h"
 #endif
 
@@ -19,11 +19,11 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 bool is_connected = false;
 bool is_charging = false;
 
-#ifdef CONFIG_OMI_ENABLE_BATTERY
+#ifdef CONFIG_OMI_BATTERY
 extern uint8_t battery_percentage;
 #endif
 
-#ifdef CONFIG_OMI_ENABLE_MIC
+#ifdef CONFIG_OMI_MIC
 /* Opus-encoded frame ready -> queue for BLE notification. */
 static void codec_handler(uint8_t *data, size_t len)
 {
@@ -41,7 +41,7 @@ static void mic_handler(int16_t *buffer)
 }
 #endif
 
-#ifdef CONFIG_OMI_ENABLE_LED
+#ifdef CONFIG_OMI_LED
 /* Simple status LED: solid blue when connected, blinking red while advertising. */
 static void led_status_loop(void)
 {
@@ -67,11 +67,11 @@ int main(void)
 
     app_settings_init();
 
-#ifdef CONFIG_OMI_ENABLE_LED
+#ifdef CONFIG_OMI_LED
     led_start();
 #endif
 
-#ifdef CONFIG_OMI_ENABLE_MIC
+#ifdef CONFIG_OMI_MIC
     /* Audio pipeline: mic -> codec -> transport. */
     set_codec_callback(codec_handler);
     if (codec_start()) {

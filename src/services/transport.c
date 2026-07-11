@@ -18,20 +18,20 @@
 #include "config.h"
 #include "features.h"
 #include "settings.h"
-#ifdef CONFIG_OMI_ENABLE_MIC
+#ifdef CONFIG_OMI_MIC
 #include "mic.h"
 #endif
-#ifdef CONFIG_OMI_ENABLE_BATTERY
+#ifdef CONFIG_OMI_BATTERY
 #include "battery.h"
 #endif
-#ifdef CONFIG_OMI_ENABLE_BUTTON
+#ifdef CONFIG_OMI_BUTTON
 #include "button.h"
 #endif
 
 LOG_MODULE_REGISTER(transport, CONFIG_LOG_DEFAULT_LEVEL);
 
 extern bool is_connected;
-#ifdef CONFIG_OMI_ENABLE_BATTERY
+#ifdef CONFIG_OMI_BATTERY
 extern bool is_charging;
 #endif
 
@@ -368,7 +368,7 @@ static ssize_t settings_mic_gain_write_handler(struct bt_conn *conn,
         new_gain = 8;
     }
     (void) app_settings_save_mic_gain(new_gain);
-#ifdef CONFIG_OMI_ENABLE_MIC
+#ifdef CONFIG_OMI_MIC
     mic_set_gain(new_gain);
 #endif
     return len;
@@ -390,7 +390,7 @@ static ssize_t settings_charging_status_read_handler(struct bt_conn *conn,
                                                      uint16_t len,
                                                      uint16_t offset)
 {
-#ifdef CONFIG_OMI_ENABLE_BATTERY
+#ifdef CONFIG_OMI_BATTERY
     uint8_t charging_status = is_charging ? 1U : 0U;
 #else
     uint8_t charging_status = 0U;
@@ -402,10 +402,10 @@ static ssize_t
 features_read_handler(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf, uint16_t len, uint16_t offset)
 {
     uint32_t features = 0;
-#ifdef CONFIG_OMI_ENABLE_BUTTON
+#ifdef CONFIG_OMI_BUTTON
     features |= OMI_FEATURE_BUTTON;
 #endif
-#ifdef CONFIG_OMI_ENABLE_BATTERY
+#ifdef CONFIG_OMI_BATTERY
     features |= OMI_FEATURE_BATTERY;
 #endif
     features |= OMI_FEATURE_LED_DIMMING;
@@ -427,7 +427,7 @@ static void exchange_func(struct bt_conn *conn, uint8_t att_err, struct bt_gatt_
 //
 // --- Battery ---
 //
-#ifdef CONFIG_OMI_ENABLE_BATTERY
+#ifdef CONFIG_OMI_BATTERY
 #define BATTERY_REFRESH_INTERVAL_CONNECTED 5000
 #define BATTERY_REFRESH_INTERVAL_DISCONNECTED 10000
 #define BATTERY_CRITICAL_MV 3300
@@ -529,7 +529,7 @@ static void _transport_disconnected(struct bt_conn *conn, uint8_t reason)
         current_connection = NULL;
     }
     current_mtu = 0;
-#ifdef CONFIG_OMI_ENABLE_BATTERY
+#ifdef CONFIG_OMI_BATTERY
     charging_status_last_notified = -1;
 #endif
     k_sem_init(&audio_tx_sem,
@@ -851,7 +851,7 @@ int transport_start(void)
         settings_load();
     }
 
-#ifdef CONFIG_OMI_ENABLE_BUTTON
+#ifdef CONFIG_OMI_BUTTON
     button_init();
     register_button_service();
     activate_button_work();
@@ -864,7 +864,7 @@ int transport_start(void)
 
     start_advertising();
 
-#ifdef CONFIG_OMI_ENABLE_BATTERY
+#ifdef CONFIG_OMI_BATTERY
     if (battery_charge_start()) {
         LOG_ERR("Battery init failed");
     } else {
