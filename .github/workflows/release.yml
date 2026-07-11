@@ -70,8 +70,10 @@ jobs:
         working-directory: omi-device-builder
         run: |
           mkdir -p dist
-          # Per-board application images (from build_all).
+          # Per-board application images (from build_all): .hex for Nordic/Silabs,
+          # .bin for ESP32-S3.
           cp build/omi-*.hex dist/ 2>/dev/null || true
+          cp build/omi-*.bin dist/ 2>/dev/null || true
           # xiao52 OTA bundle: bootloader, signed app (J-Link), and the .bin to
           # upload over BLE/USB-C with mcumgr.
           ota=build/omi-xiao52-mcuboot

@@ -31,8 +31,17 @@ foreach ($d in $devices) {
         Write-Host "Build FAILED for omi-$($d.name)" -ForegroundColor Red
         exit 1
     }
-    Copy-Item "$outdir/zephyr/zephyr.hex" "build/omi-$($d.name).hex" -Force
-    Write-Host "    -> build/omi-$($d.name).hex" -ForegroundColor Green
+    # Nordic/Silabs produce zephyr.hex; ESP32-S3 produces zephyr.bin (esptool).
+    if (Test-Path "$outdir/zephyr/zephyr.hex") {
+        Copy-Item "$outdir/zephyr/zephyr.hex" "build/omi-$($d.name).hex" -Force
+        Write-Host "    -> build/omi-$($d.name).hex" -ForegroundColor Green
+    } elseif (Test-Path "$outdir/zephyr/zephyr.bin") {
+        Copy-Item "$outdir/zephyr/zephyr.bin" "build/omi-$($d.name).bin" -Force
+        Write-Host "    -> build/omi-$($d.name).bin" -ForegroundColor Green
+    } else {
+        Write-Host "ERROR: no zephyr.hex/.bin produced for omi-$($d.name)" -ForegroundColor Red
+        exit 1
+    }
 }
 
 Write-Host "All builds done." -ForegroundColor Green
