@@ -1,42 +1,13 @@
 /*
- * MCUboot flash layout for the OTA build — MCUBOOT image (links into
- * boot_partition). Passed to the mcuboot image by scripts/build_ota.* via
- * mcuboot_EXTRA_DTC_OVERLAY_FILE. Keep the partition table identical to
- * boards/xiao52/ota.overlay.
+ * OTA build — MCUBOOT image: link MCUboot into boot_partition. The partition
+ * table itself is shared with the application image; see partitions.dtsi.
+ * Passed to the mcuboot image by scripts/build_ota.* (mcuboot_EXTRA_DTC_OVERLAY_FILE).
  */
+
+#include "partitions.dtsi"
 
 / {
 	chosen {
 		zephyr,code-partition = &boot_partition;
-	};
-};
-
-&flash0 {
-	/delete-node/ partitions;
-
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x00000000 0x00014000>;
-		};
-
-		slot0_partition: partition@14000 {
-			label = "image-0";
-			reg = <0x00014000 0x00070000>;
-		};
-
-		slot1_partition: partition@84000 {
-			label = "image-1";
-			reg = <0x00084000 0x00070000>;
-		};
-
-		storage_partition: partition@f4000 {
-			label = "storage";
-			reg = <0x000f4000 0x00008000>;
-		};
 	};
 };

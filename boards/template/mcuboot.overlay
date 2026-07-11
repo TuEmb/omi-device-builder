@@ -1,38 +1,13 @@
 /*
  * OPTIONAL — only needed if this board supports the OTA build (scripts/build_ota.*).
- * MCUboot flash layout, MCUBOOT image (links into boot_partition). Must match
- * boards/<board>/ota.overlay exactly except for the chosen code-partition below.
+ * MCUBOOT image: link MCUboot into boot_partition. Partition sizes live in
+ * partitions.dtsi (shared with ota.overlay).
  */
+
+#include "partitions.dtsi"
 
 / {
 	chosen {
 		zephyr,code-partition = &boot_partition;
-	};
-};
-
-&flash0 {
-	/delete-node/ partitions;
-
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x00000000 0x00014000>;   /* 80 kB */
-		};
-		slot0_partition: partition@14000 {
-			label = "image-0";
-			reg = <0x00014000 0x00070000>;   /* 448 kB */
-		};
-		slot1_partition: partition@84000 {
-			label = "image-1";
-			reg = <0x00084000 0x00070000>;   /* 448 kB */
-		};
-		storage_partition: partition@f4000 {
-			label = "storage";
-			reg = <0x000f4000 0x00008000>;   /* 32 kB */
-		};
 	};
 };

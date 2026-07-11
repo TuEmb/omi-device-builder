@@ -72,15 +72,17 @@ anything about a board you only touch that one folder.
 3. In `<board>.conf`, set `CONFIG_BT_DEVICE_NAME="omi-<board>"` and any backend
    override (e.g. `CONFIG_OMI_MIC_BACKEND_ADC=y` for an analog mic).
 4. Build: `west build -b <board target>` (or add a line to `scripts/build_all.*`).
-5. For the OTA build, keep `ota.overlay` + `mcuboot.overlay` (flash partition
-   layout) sized to your chip; otherwise delete them.
+5. For the OTA build, size the flash layout **once** in `partitions.dtsi` and
+   keep `ota.overlay` + `mcuboot.overlay` (each just `#include`s it and picks a
+   `chosen` code-partition). Delete all three if the board has no OTA support.
 
 ```
 boards/<board>/
 ├── <board>.conf        # app Kconfig (BLE name, backend overrides)
 ├── <board>.overlay     # devicetree: hardware + user button
-├── ota.overlay         # OTA build: app flash partitions (slot0)   [optional]
-└── mcuboot.overlay     # OTA build: bootloader flash partitions     [optional]
+├── partitions.dtsi     # OTA build: flash partition table (edit here)  [optional]
+├── ota.overlay         # OTA build: app image  -> slot0   (#includes it) [optional]
+└── mcuboot.overlay     # OTA build: bootloader -> boot     (#includes it) [optional]
 ```
 
 Minimum for a functional device is **mic + LED**; BLE-only placeholder boards may

@@ -1,0 +1,40 @@
+/*
+ * Shared MCUboot flash layout for the OTA build (nRF52840, 1 MB). Included by
+ * both ota.overlay (app -> slot0) and mcuboot.overlay (bootloader -> boot), so
+ * the table is defined ONCE here. slot0 and slot1 MUST stay equal size.
+ *
+ *   0x00000000  mcuboot        80 kB
+ *   0x00014000  slot0 (app)   448 kB
+ *   0x00084000  slot1 (dfu)   448 kB
+ *   0x000f4000  storage        32 kB
+ */
+
+&flash0 {
+	/delete-node/ partitions;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00014000>;
+		};
+
+		slot0_partition: partition@14000 {
+			label = "image-0";
+			reg = <0x00014000 0x00070000>;
+		};
+
+		slot1_partition: partition@84000 {
+			label = "image-1";
+			reg = <0x00084000 0x00070000>;
+		};
+
+		storage_partition: partition@f4000 {
+			label = "storage";
+			reg = <0x000f4000 0x00008000>;
+		};
+	};
+};
