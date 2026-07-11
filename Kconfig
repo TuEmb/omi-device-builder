@@ -67,6 +67,48 @@ config OMI_BUTTON
       User button (long-press power off). Auto-on when the board devicetree
       provides an `sw0` alias (see overlays/<board>.overlay).
 
+config OMI_STORAGE
+    bool "Mass storage (SD card / external NAND flash)"
+    default y if $(dt_nodelabel_enabled,sdmmc_disk) || $(dt_nodelabel_enabled,omi_storage)
+    help
+      Mount a mass-storage backend as a filesystem at /omi. Auto-on when the
+      board devicetree provides an SD disk (nodelabel `sdmmc_disk`) or an
+      external-flash littlefs partition (nodelabel `omi_storage`).
+      (Nodelabels are used instead of compatibles because Kconfig can't pass a
+      comma-containing compatible like `zephyr,sdmmc-disk`.)
+
+choice OMI_STORAGE_BACKEND
+    prompt "Storage backend"
+    depends on OMI_STORAGE
+    default OMI_STORAGE_BACKEND_SD if $(dt_nodelabel_enabled,sdmmc_disk)
+    default OMI_STORAGE_BACKEND_NAND
+
+config OMI_STORAGE_BACKEND_SD
+    bool "SD card (FATFS)"
+    select DISK_ACCESS
+    select DISK_DRIVER_SDMMC
+    select FILE_SYSTEM
+    select FAT_FILESYSTEM_ELM
+    help
+      FATFS on an SD card via disk_access. Needs a `zephyr,sdmmc-disk` node.
+
+config OMI_STORAGE_BACKEND_NAND
+    bool "External flash (littlefs)"
+    select FLASH
+    select FLASH_MAP
+    select FILE_SYSTEM
+    select FILE_SYSTEM_LITTLEFS
+    help
+      littlefs on an external flash chip. Needs a flash node (e.g. `spi-nand`)
+      with a fixed-partition labelled `omi_storage`.
+
+endchoice
+
+config OMI_STORAGE_SD_DISK_NAME
+    string "SD disk-name (must match the devicetree node's disk-name)"
+    depends on OMI_STORAGE_BACKEND_SD
+    default "SD"
+
 comment "Minimum recommended for a functional device: OMI_MIC + OMI_LED."
 comment "BLE-only placeholder boards (no mic/LED driver yet) may disable both."
 

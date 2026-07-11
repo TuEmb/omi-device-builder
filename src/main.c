@@ -12,6 +12,9 @@
 #ifdef CONFIG_OMI_BATTERY
 #include "battery.h"
 #endif
+#ifdef CONFIG_OMI_STORAGE
+#include "storage.h"
+#endif
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -66,6 +69,12 @@ int main(void)
     LOG_INF("omi-device-builder starting (%s)", CONFIG_BT_DEVICE_NAME);
 
     app_settings_init();
+
+#ifdef CONFIG_OMI_STORAGE
+    if (storage_init()) {
+        LOG_ERR("storage_init failed");
+    }
+#endif
 
 #ifdef CONFIG_OMI_LED
     led_start();

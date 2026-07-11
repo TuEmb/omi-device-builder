@@ -34,6 +34,14 @@ if(CONFIG_OMI_BUTTON)
     target_sources(app PRIVATE src/components/button/button.c)
 endif()
 
+if(CONFIG_OMI_STORAGE)
+    if(CONFIG_OMI_STORAGE_BACKEND_NAND)
+        target_sources(app PRIVATE src/components/storage/storage_nand.c)
+    else()
+        target_sources(app PRIVATE src/components/storage/storage_sd.c)
+    endif()
+endif()
+
 # Component/service headers are included by short name (e.g. "led.h", "config.h"),
 # so expose every module directory (and src/ for shared headers + the vendored
 # opus path used as "opus-1.2.1/opus.h") on the include path.
@@ -44,6 +52,7 @@ target_include_directories(app PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/components/codec
     ${CMAKE_CURRENT_SOURCE_DIR}/src/components/battery
     ${CMAKE_CURRENT_SOURCE_DIR}/src/components/button
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/components/storage
     ${CMAKE_CURRENT_SOURCE_DIR}/src/services
 )
 
