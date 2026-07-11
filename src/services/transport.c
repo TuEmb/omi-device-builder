@@ -256,12 +256,17 @@ static struct bt_gatt_service time_sync_service = BT_GATT_SERVICE(time_sync_serv
 //
 // --- Advertising ---
 //
+/* Advertising data (31 bytes max): flags + the 128-bit audio service UUID so
+ * the Omi app can discover by service. The 128-bit UUID alone is 18 bytes, which
+ * leaves no room for a full name here — so the name goes in the scan response
+ * below. (Putting it here truncated "omi-xiao52" to "omi-xiao".) */
 static const struct bt_data bt_ad[] = {
     BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
     BT_DATA(BT_DATA_UUID128_ALL, audio_service_uuid.val, sizeof(audio_service_uuid.val)),
-    BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
+/* Scan response (another 31 bytes): the complete device name + DIS UUID. */
 static const struct bt_data bt_sd[] = {
+    BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
     BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_DIS_VAL)),
 };
 
