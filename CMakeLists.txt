@@ -18,10 +18,12 @@ if(CONFIG_OMI_LED)
 endif()
 
 if(CONFIG_OMI_MIC)
-    target_sources(app PRIVATE
-        src/components/mic/mic.c
-        src/components/codec/codec.c
-    )
+    target_sources(app PRIVATE src/components/codec/codec.c)
+    if(CONFIG_OMI_MIC_BACKEND_ADC)
+        target_sources(app PRIVATE src/components/mic/mic_adc.c)
+    else()
+        target_sources(app PRIVATE src/components/mic/mic_pdm.c)
+    endif()
 endif()
 
 if(CONFIG_OMI_BATTERY)

@@ -15,6 +15,27 @@ config OMI_MIC
       boards whose mic has no Zephyr driver yet (analog/ESP32 PDM) so the
       firmware still builds as a BLE-only device.
 
+choice OMI_MIC_BACKEND
+    prompt "Microphone backend"
+    depends on OMI_MIC
+    default OMI_MIC_BACKEND_PDM if $(dt_alias_enabled,dmic-dev)
+    default OMI_MIC_BACKEND_ADC
+    help
+      Which driver implements the mic. PDM uses the Zephyr dmic subsystem;
+      Analog samples an ADC channel (for analog MEMS mics like the MG24's).
+
+config OMI_MIC_BACKEND_PDM
+    bool "PDM (Zephyr dmic)"
+    help
+      Digital PDM mic via the Zephyr dmic subsystem. Needs a `dmic-dev` alias.
+
+config OMI_MIC_BACKEND_ADC
+    bool "Analog (ADC sampling)"
+    help
+      Analog MEMS mic sampled over ADC. Skeleton only — not implemented yet.
+
+endchoice
+
 config OMI_CODEC_OPUS
     bool "Opus audio codec"
     default y
