@@ -1,0 +1,4 @@
+# Host tools for capturing/decoding the BLE audio stream (tools/omi_audio_to_wav.py)
+bleak      # cross-platform BLE central
+opuslib    # Opus decode (raw packets)
+pyogg      # bundles native libopus so opuslib loads with no manual DLL setup
