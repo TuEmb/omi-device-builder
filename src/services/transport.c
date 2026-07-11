@@ -266,18 +266,44 @@ static const struct bt_data bt_sd[] = {
 };
 
 /* (Re)start connectable advertising. BT_LE_ADV_CONN was removed in Zephyr 4.4;
- * FAST_1 is the recommended connectable-advertising parameter set. Safe to call
- * from the disconnected callback to resume advertising after a peer drops. */
-static void start_advertising(void)
+ * FAST_1 is the recommended connectable-advertising parameter set. Returns 0 on
+ * success (or if already advertising). NOTE: do NOT call this directly from the
+ * disconnected callback — use adv_restart_work (below); the just-closed
+ * connection isn't freed yet there, so a connectable start fails with -ENOMEM. */
+static int start_advertising(void)
 {
     int err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, bt_ad, ARRAY_SIZE(bt_ad), bt_sd, ARRAY_SIZE(bt_sd));
     if (err == -EALREADY) {
-        return;
+        return 0;
     }
     if (err) {
         LOG_ERR("Advertising failed to start (err %d)", err);
     } else {
         LOG_INF("Advertising started");
+    }
+    return err;
+}
+
+/* Resume advertising off the system workqueue, retrying with a short backoff
+ * until the disconnected connection object is freed (bt_le_adv_start returns
+ * -ENOMEM while it is still held). */
+static void adv_restart_work_handler(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(adv_restart_work, adv_restart_work_handler);
+
+static void adv_restart_work_handler(struct k_work *work)
+{
+    ARG_UNUSED(work);
+    static uint8_t attempts;
+
+    if (start_advertising() == 0) {
+        attempts = 0;
+        return;
+    }
+    if (++attempts < 10) {
+        k_work_reschedule(&adv_restart_work, K_MSEC(200));
+    } else {
+        attempts = 0;
+        LOG_ERR("Advertising restart gave up after retries");
     }
 }
 
@@ -537,8 +563,10 @@ static void _transport_disconnected(struct bt_conn *conn, uint8_t reason)
                CONFIG_BT_CONN_TX_MAX - AUDIO_TX_RESERVED_SLOTS);
 
     /* Resume advertising so the device is discoverable again after a peer
-     * disconnects (previously it went silent after the first connection). */
-    start_advertising();
+     * disconnects. Deferred to the workqueue: a connectable bt_le_adv_start()
+     * straight from this callback fails with -ENOMEM (the closed connection is
+     * not freed yet). */
+    k_work_reschedule(&adv_restart_work, K_MSEC(100));
 }
 
 static bool _le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
