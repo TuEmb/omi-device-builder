@@ -1,0 +1,109 @@
+/*
+ * Board template — copy to boards/<yourboard>.overlay and declare ONLY the
+ * hardware your board actually has. Each component below auto-enables from the
+ * devicetree signal shown; delete the blocks you don't have and the matching
+ * feature compiles out. Minimum for a functional device: mic + LED.
+ *
+ * See also boards/<yourboard>.conf for the BLE name + any backend overrides,
+ * and the "Adding a board" section of the README.
+ */
+
+/ {
+	aliases {
+		/* MIC (required) — PDM mic. Point at your PDM peripheral; this alias
+		 * turns on OMI_MIC (PDM backend). For an analog mic instead, omit this
+		 * and set CONFIG_OMI_MIC_BACKEND_ADC=y in the .conf (see mic_adc.c). */
+		/* dmic-dev = &pdm0; */
+
+		/* BUTTON (optional) — long-press power off. Enables OMI_BUTTON. */
+		/* sw0 = &user_button; */
+	};
+
+	/* BUTTON node (optional) — wire to your pin. */
+	/*
+	buttons {
+		compatible = "gpio-keys";
+		user_button: user_button {
+			gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "User button";
+		};
+	};
+	*/
+
+	/* LED (required) — status indication. A `gpio-leds` or `pwm-leds` node
+	 * enables OMI_LED. Many boards already define this in their base DTS; if so
+	 * you don't need to repeat it here. */
+	/*
+	leds {
+		compatible = "gpio-leds";
+		led_red:   led_0 { gpios = <&gpio0 26 GPIO_ACTIVE_LOW>; };
+		led_green: led_1 { gpios = <&gpio0 30 GPIO_ACTIVE_LOW>; };
+		led_blue:  led_2 { gpios = <&gpio0  6 GPIO_ACTIVE_LOW>; };
+	};
+	*/
+
+	/* BATTERY (optional) — ADC voltage divider. Enables OMI_BATTERY.
+	 * Tune BATTERY_DIVIDER_MILLI in src/components/battery/battery.c. */
+	/*
+	zephyr,user {
+		io-channels = <&adc 7>;
+		batt-enable-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+	};
+	*/
+};
+
+/* MIC pins live in your PDM peripheral (via pinctrl); enable it here. */
+/* &pdm0 { status = "okay"; }; */
+
+/* BATTERY ADC channel (match io-channels above). */
+/*
+&adc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	channel@7 {
+		reg = <7>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN7>;
+		zephyr,resolution = <12>;
+	};
+};
+*/
+
+/* STORAGE (optional) — pick ONE:
+ *
+ * SD card (FATFS): an SD-over-SPI slot with nodelabel `sdmmc_disk` enables
+ * OMI_STORAGE (SD backend). disk-name must match CONFIG_OMI_STORAGE_SD_DISK_NAME.
+ */
+/*
+&your_spi {
+	cs-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+	sdhc0: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		sdmmc_disk: sdmmc-disk {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+		};
+	};
+};
+*/
+/*
+ * External flash (littlefs): a flash chip with a fixed-partition whose
+ * nodelabel is `omi_storage` enables OMI_STORAGE (NAND backend).
+ */
+/*
+&your_flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		omi_storage: partition@0 {
+			label = "omi_storage";
+			reg = <0x0 0x200000>;
+		};
+	};
+};
+*/

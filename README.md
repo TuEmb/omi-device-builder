@@ -60,8 +60,38 @@ the Seeed schematics:
 Both mics are real firmware work (a PDM driver / an ADC backend) plus on-device
 testing — the exact pins are recorded in the overlay files for whoever does it.
 
-Add another board by dropping `boards/<device>.conf` + `boards/<device>.overlay`
-and one line in `scripts/build_all.*`.
+## Architecture — components & features
+
+The firmware is **component-driven**: a board's devicetree declares *what hardware
+it has*, and each component auto-enables from that. Users turn features on/off in
+Kconfig, but a feature can only be enabled if the board actually has the hardware.
+
+| Component | Enable symbol | Auto-on when the devicetree has… | Backends |
+|---|---|---|---|
+| Mic (required) | `OMI_MIC` | alias `dmic-dev` (PDM) | `OMI_MIC_BACKEND_PDM` \| `_ADC` |
+| LED (required) | `OMI_LED` | a `gpio-leds` or `pwm-leds` node | — |
+| Codec | `OMI_CODEC_OPUS` | (default on) | opus |
+| Battery | `OMI_BATTERY` | (default on; ADC divider) | — |
+| Button | `OMI_BUTTON` | alias `sw0` | — |
+| Storage | `OMI_STORAGE` | nodelabel `sdmmc_disk` (SD) or `omi_storage` (flash) | `_SD` (FATFS) \| `_NAND` (littlefs) |
+
+Source is organised as `src/components/<name>/` (a stable `<name>.h` interface +
+one `.c` per backend) and `src/services/` (BLE-facing features). Optional feature
+bundles (BLE OTA, USB-CDC console) are Zephyr **snippets** under `snippets/`.
+
+### Adding a board
+
+1. `cp boards/template.overlay boards/<board>.overlay` and
+   `cp boards/template.conf boards/<board>.conf`.
+2. In the `.overlay`, declare only the hardware you have (uncomment/fill the
+   blocks per the table above). Omit what you don't have — that component
+   compiles out automatically.
+3. In the `.conf`, set `CONFIG_BT_DEVICE_NAME` and any backend override (e.g.
+   `CONFIG_OMI_MIC_BACKEND_ADC=y` for an analog mic).
+4. `west build -b <board>` (or add a line to `scripts/build_all.*`).
+
+Minimum for a functional device is **mic + LED**; BLE-only placeholder boards may
+disable both.
 
 ## Requirements
 
@@ -137,20 +167,26 @@ the Seeed variant references and are marked with `TODO(verify)`:
 - `boards/xiao54l.overlay` — **placeholders**. Fill in the real pins from the
   `xiao_nrf54l15` DTS.
 
-Also tune `BATTERY_DIVIDER_MILLI` in `src/battery.c` to your board's divider.
+Also tune `BATTERY_DIVIDER_MILLI` in `src/components/battery/battery.c` to your
+board's divider.
 
 ## Project layout
 
 ```
 omi-device-builder/
-├── CMakeLists.txt / Kconfig / prj.conf   # build + common config
-├── boards/<device>.{conf,overlay}        # per-board name, pins, features
-├── scripts/build_all.{sh,ps1}            # build every board
+├── CMakeLists.txt / Kconfig / prj.conf   # build + component config
+├── boards/<device>.{conf,overlay}        # per-board hardware; template.* to start
+├── overlays/<device>.overlay             # per-board user overlay (button pin)
+├── snippets/{ota,usb-console}/           # optional feature bundles (-S <name>)
+├── sysbuild.conf / sysbuild/             # MCUboot image (OTA build)
+├── scripts/build_all.* / build_ota.*     # build helpers
 └── src/
-    ├── main.c            # init + mic->codec->transport wiring + LED status
-    ├── mic.c             # standard nRF PDM (dmic) capture
-    ├── codec.c           # Opus encode (from omi, unchanged)
-    ├── transport.c       # BLE audio/settings/features/time-sync + battery
-    ├── battery.c / button.c / led.c / settings.c
-    └── opus-1.2.1/       # vendored Opus (from omi)
+    ├── main.c                            # orchestration (enabled components only)
+    ├── components/
+    │   ├── mic/     mic.h · mic_pdm.c · mic_adc.c
+    │   ├── codec/   codec.h · codec.c   (Opus)
+    │   ├── led/ · battery/ · button/
+    │   └── storage/ storage.h · storage_sd.c · storage_nand.c
+    ├── services/    transport.c · settings.c   # BLE-facing
+    └── opus-1.2.1/                        # vendored Opus (from omi)
 ```
