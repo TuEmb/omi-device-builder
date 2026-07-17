@@ -20,8 +20,13 @@ you can update it wirelessly from your phone or over USB-C — no debugger neede
 - 💾 **Storage** (optional, on boards that have an SD card or flash chip).
 - ⬆️ **Easy updates** — over Bluetooth (from a phone app) or over USB-C.
 - 🔌 **USB-C logs** — plug in and watch what the device is doing in any serial
-- 💡 **Wake word** — small AI model on device for wake-word.
-  terminal.
+- 💡 **Wake word** — small AI model on device for wake-word (to be implemented)
+
+
+
+https://github.com/user-attachments/assets/4f10bbc5-5163-481f-b913-8e72ee6871c0
+
+
 
 ## 📟 Supported devices
 
